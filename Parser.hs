@@ -1,17 +1,7 @@
 module Parser where
 
+import Kaguya
 import Text.Parsec
-
-data Term
-  = Compound String [Term]
-  | Variable String
-  deriving Show
-
-data Clause
-  = Fact Term
-  | Rule Term [Term]
-  | Query [Term]
-  deriving Show
 
 type Parser t = Parsec String () t
 
@@ -71,8 +61,7 @@ rule = do
 fact :: Parser Clause
 fact = do
   head <- term
-  return $ Fact head
+  return $ Rule head []
 
 clause :: Parser Clause
-clause = rule <|> fact
-
+clause = try rule <|> fact
