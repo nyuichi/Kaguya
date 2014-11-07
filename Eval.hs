@@ -10,6 +10,10 @@ compose lhs rhs = nubBy ((==) `on` fst) alist
   where
     alist = [ (var, subst lhs term) | (var, term) <- rhs ] ++ lhs
 
+occur :: String -> Term -> Bool
+occur var (Variable name) = var == name
+occur var (Compound _ args) = any (occur var) args
+
 subst :: Substitution -> Term -> Term
 subst theta (Compound op args) = Compound op (map (subst theta) args)
 subst theta (Variable n) =
@@ -18,8 +22,12 @@ subst theta (Variable n) =
     Nothing -> Variable n
 
 unify :: Term -> Term -> Maybe Substitution
-unify (Variable var) term = return $ [(var, term)]
-unify term (Variable var) = return $ [(var, term)]
+unify (Variable var) term =
+  if occur var term then
+    Nothing
+  else
+    return $ [(var, term)]
+unify term (Variable var) = unify (Variable var) term
 unify (Compound op1 args1) (Compound op2 args2) | op1 == op2 = go args1 args2 []
   where
     go [] [] theta = return $ theta
