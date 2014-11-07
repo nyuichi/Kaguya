@@ -25,7 +25,7 @@ unify (Compound op1 args1) (Compound op2 args2) | op1 == op2 = go args1 args2 []
     go [] [] theta = return $ theta
     go (t1:ts1) (t2:ts2) theta = do
       phi <- unify t1 t2
-      go (map (subst phi) ts1) (map (subst phi)ts2) (phi `compose` theta)
+      go (map (subst phi) ts1) (map (subst phi) ts2) (phi `compose` theta)
     go [] _ _ = Nothing
     go _ [] _ = Nothing
 unify _ _ = Nothing
