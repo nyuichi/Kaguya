@@ -1,20 +1,19 @@
 module Main where
 
 import Text.Parsec (parse)
-import Control.Monad
+import System.Environment
 
 import Kaguya
 import Parser
 import Eval
 
-entry :: Term
-entry = Compound "main" []
+entry :: [String] -> Term
+entry args = Compound "main" $ map (\s -> Compound s []) args
 
 main :: IO ()
 main = do
+  args <- getArgs
   text <- getContents
-  let Right cs = parse program "" text
-  let substs = resolve cs entry
-  substs `forM` \s ->
-    print s
-  return ()
+  case parse program "" text of
+    Left  e  -> print e
+    Right cs -> print $ length (resolve cs (entry args)) /= 0
