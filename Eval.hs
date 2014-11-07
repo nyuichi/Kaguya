@@ -1,5 +1,6 @@
 module Eval where
 
+import Prelude hiding (head, tail)
 import Kaguya
 
 compose :: Substitution -> Substitution -> Substitution

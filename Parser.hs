@@ -1,7 +1,8 @@
 module Parser where
 
-import Kaguya
+import Prelude hiding (head, tail)
 import Text.Parsec
+import Kaguya
 
 type Parser t = Parsec String () t
 
@@ -27,18 +28,16 @@ simpleCompound = do
   args    <- option [] arguments
   return $ Compound functor args
 
--- listCompound :: Parser Term
--- listCompound = do
---   char '['
---   args <- (between spaces spaces term) `sepBy` (char ',')
---   char ']'
---   return $ Compound "." args
---   where
---     go = do
---       case optionMaybe
+listCompound :: Parser Term
+listCompound = do
+  char '['
+  args <- (between spaces spaces term) `sepBy` (char ',')
+  rest <- option (Compound "[]" [])  $ char '|' >> (between spaces spaces term)
+  char ']'
+  return $ foldr (\x y -> Compound "." [x,y]) rest args
 
 compound :: Parser Term
-compound = simpleCompound
+compound = try simpleCompound <|> listCompound
 
 var :: Parser Term
 var = do
