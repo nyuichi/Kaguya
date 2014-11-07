@@ -35,7 +35,7 @@ listCompound :: Parser Term
 listCompound = do
   char '['
   args <- (between spaces spaces term) `sepBy` (char ',')
-  rest <- option (Compound "[]" [])  $ char '|' >> (between spaces spaces term)
+  rest <- option empty $ char '|' >> (between spaces spaces term)
   char ']'
   return $ foldr (\x y -> Compound "." [x,y]) rest args
 

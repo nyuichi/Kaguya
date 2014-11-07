@@ -11,3 +11,13 @@ data Clause
 
 type Substitution
   = [(String, Term)]
+
+
+toAtom :: String -> Term
+toAtom a = Compound a []
+
+toList :: [Term] -> Term
+toList xs = foldr (\x y -> Compound "." [x,y]) empty xs
+
+empty :: Term
+empty = Compound "[]" []
