@@ -1,9 +1,10 @@
 module Kaguya where
 
+import Data.List
+
 data Term
   = Compound String [Term]
   | Variable String
-  deriving Show
 
 data Clause
   = Rule Term [Term]
@@ -12,6 +13,10 @@ data Clause
 type Substitution
   = [(String, Term)]
 
+instance Show Term where
+  show (Variable var) = var
+  show (Compound atom []) = atom
+  show (Compound atom args) = atom ++ "(" ++ intercalate "," (map show args) ++ ")"
 
 toAtom :: String -> Term
 toAtom a = Compound a []
