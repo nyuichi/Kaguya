@@ -1,13 +1,16 @@
-module Parser where
+module Parser (parse) where
 
 import Prelude hiding (head, tail)
-import Text.Parsec
+import Text.Parsec hiding (parse)
 import Kaguya
 
 type Parser t = Parsec String () t
 
+parse :: SourceName -> String -> Either ParseError [Clause]
+parse = runParser program ()
+
 program :: Parser [Clause]
-program = (spaces >> clause) `endBy` (between spaces spaces $ string ".")
+program = many (between spaces spaces clause)
 
 atom :: Parser String
 atom = do
@@ -63,4 +66,8 @@ fact = do
   return $ Rule head []
 
 clause :: Parser Clause
-clause = try rule <|> fact
+clause = do
+  c <- try rule <|> fact
+  spaces
+  char '.'
+  return $ c
