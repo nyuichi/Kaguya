@@ -7,7 +7,7 @@ import Parser
 import Eval
 
 entry :: [String] -> Term
-entry args = Compound "main" $ map toAtom args
+entry args = Compound "main" $ [ toList (map toAtom args) ]
 
 main :: IO ()
 main = do
