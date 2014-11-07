@@ -15,6 +15,7 @@ type Substitution
 
 instance Show Term where
   show (Variable var) = var
+  show (Compound "." [h,t]) = "[" ++ show h ++ "|" ++ show t ++ "]"
   show (Compound atom []) = atom
   show (Compound atom args) = atom ++ "(" ++ intercalate "," (map show args) ++ ")"
 
