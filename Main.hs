@@ -15,4 +15,7 @@ main = do
   text <- getContents
   case parse "" text of
     Left  e  -> print e
-    Right cs -> print $ length (resolve cs (entry args)) /= 0
+    Right cs -> do
+      case eval cs (entry args) of
+        Nothing -> print False
+        Just xs -> print xs

@@ -1,8 +1,8 @@
-module Eval where
+module Eval (eval) where
 
 import Prelude hiding (head, tail)
 import Data.List hiding (head)
-import Data.Function
+import Data.Function (on)
 import Kaguya
 
 compose :: Substitution -> Substitution -> Substitution
@@ -38,14 +38,30 @@ unify (Compound op1 args1) (Compound op2 args2) | op1 == op2 = go args1 args2 []
     go _ [] _ = Nothing
 unify _ _ = Nothing
 
-resolve :: [Clause] -> Term -> [Substitution]
-resolve rules term = do
-  Rule head body <- rules
-  case unify term head of
-    Just theta -> go (map (subst theta) body) theta
-    Nothing -> []
+testHead :: Clause -> Term -> Maybe ([Term], Substitution)
+testHead (Rule head body) term = do
+  phi <- unify head term
+  return $ (map (subst phi) body, phi)
+
+testBody :: [Clause] -> [Term] -> Substitution -> Maybe Substitution
+testBody _ [] phi = return phi
+testBody db (g:gs) phi = do
+  theta <- resolve db g
+  testBody db (map (subst theta) gs) (theta `compose` phi)
+
+testClause :: [Clause] -> Clause -> Term -> Maybe Substitution
+testClause db rule term = do
+  (goals, phi) <- testHead rule term
+  testBody db goals phi
+
+resolve :: [Clause] -> Term -> Maybe Substitution
+resolve db term = go db
   where
-    go [] theta = return $ theta
-    go (g:gs) theta = do
-      phi <- resolve rules g
-      go (map (subst phi) gs) (phi `compose` theta)
+    go [] = Nothing
+    go (r:rs) = do
+      case  testClause db r term of
+        Nothing -> go rs
+        Just phi -> return phi
+
+eval :: [Clause] -> Term -> Maybe Substitution
+eval db term = resolve db term
