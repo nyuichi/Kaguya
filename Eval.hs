@@ -9,6 +9,8 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.State
 import Kaguya
 
+type Evaluator = StateT Int Maybe
+
 compose :: Substitution -> Substitution -> Substitution
 compose lhs rhs = nubBy ((==) `on` fst) alist
   where
@@ -42,41 +44,41 @@ unify (Compound op1 args1) (Compound op2 args2) | op1 == op2 = go args1 args2 []
     go _ [] _ = Nothing
 unify _ _ = Nothing
 
-fresh :: StateT Int Maybe ()
+fresh :: Evaluator ()
 fresh = modify (+ 1)
 
-rename :: String -> StateT Int Maybe String
+rename :: String -> Evaluator String
 rename var = do
   id <- get
   return $ var ++ "$" ++ show id
 
-alpha :: Term -> StateT Int Maybe Term
+alpha :: Term -> Evaluator Term
 alpha (Compound op args) = Compound op <$> mapM alpha args
 alpha (Variable var) = Variable <$> rename var
 
-instantiate :: Clause -> StateT Int Maybe Clause
+instantiate :: Clause -> Evaluator Clause
 instantiate (Rule head body) = do
   fresh
   Rule <$> (alpha head) <*> (mapM alpha body)
 
-testHead :: Clause -> Term -> StateT Int Maybe ([Term], Substitution)
+testHead :: Clause -> Term -> Evaluator ([Term], Substitution)
 testHead rule term = do
   Rule head body <- instantiate rule
   phi <- lift $ unify head term
   return $ (map (subst phi) body, phi)
 
-testBody :: [Clause] -> [Term] -> Substitution -> StateT Int Maybe Substitution
+testBody :: [Clause] -> [Term] -> Substitution -> Evaluator Substitution
 testBody _ [] phi = return phi
 testBody db (g:gs) phi = do
   theta <- resolve db g
   testBody db (map (subst theta) gs) (theta `compose` phi)
 
-testClause :: [Clause] -> Clause -> Term -> StateT Int Maybe Substitution
+testClause :: [Clause] -> Clause -> Term -> Evaluator Substitution
 testClause db rule term = do
   (goals, phi) <- testHead rule term
   testBody db goals phi
 
-resolve :: [Clause] -> Term -> StateT Int Maybe Substitution
+resolve :: [Clause] -> Term -> Evaluator Substitution
 resolve db term = go db
   where
     go [] = mzero
