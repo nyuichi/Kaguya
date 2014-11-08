@@ -1,8 +1,12 @@
 module Eval (eval) where
 
-import Prelude hiding (head, tail)
+import Prelude hiding (head, tail, id)
 import Data.List hiding (head)
 import Data.Function (on)
+import Control.Applicative
+import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.State
 import Kaguya
 
 compose :: Substitution -> Substitution -> Substitution
@@ -38,30 +42,49 @@ unify (Compound op1 args1) (Compound op2 args2) | op1 == op2 = go args1 args2 []
     go _ [] _ = Nothing
 unify _ _ = Nothing
 
-testHead :: Clause -> Term -> Maybe ([Term], Substitution)
-testHead (Rule head body) term = do
-  phi <- unify head term
+fresh :: StateT Int Maybe ()
+fresh = modify (+ 1)
+
+rename :: String -> StateT Int Maybe String
+rename var = do
+  id <- get
+  return $ var ++ "$" ++ show id
+
+alpha :: Term -> StateT Int Maybe Term
+alpha (Compound op args) = Compound op <$> mapM alpha args
+alpha (Variable var) = Variable <$> rename var
+
+instantiate :: Clause -> StateT Int Maybe Clause
+instantiate (Rule head body) = do
+  fresh
+  Rule <$> (alpha head) <*> (mapM alpha body)
+
+testHead :: Clause -> Term -> StateT Int Maybe ([Term], Substitution)
+testHead rule term = do
+  Rule head body <- instantiate rule
+  phi <- lift $ unify head term
   return $ (map (subst phi) body, phi)
 
-testBody :: [Clause] -> [Term] -> Substitution -> Maybe Substitution
+testBody :: [Clause] -> [Term] -> Substitution -> StateT Int Maybe Substitution
 testBody _ [] phi = return phi
 testBody db (g:gs) phi = do
   theta <- resolve db g
   testBody db (map (subst theta) gs) (theta `compose` phi)
 
-testClause :: [Clause] -> Clause -> Term -> Maybe Substitution
+testClause :: [Clause] -> Clause -> Term -> StateT Int Maybe Substitution
 testClause db rule term = do
   (goals, phi) <- testHead rule term
   testBody db goals phi
 
-resolve :: [Clause] -> Term -> Maybe Substitution
+resolve :: [Clause] -> Term -> StateT Int Maybe Substitution
 resolve db term = go db
   where
-    go [] = Nothing
+    go [] = mzero
     go (r:rs) = do
-      case  testClause db r term of
+      s <- get
+      case runStateT (testClause db r term) s of
         Nothing -> go rs
-        Just phi -> return phi
+        Just (a,s') -> put s' >> return a
 
 eval :: [Clause] -> Term -> Maybe Substitution
-eval db term = resolve db term
+eval db term = evalStateT (resolve db term) 0
