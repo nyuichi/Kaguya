@@ -63,8 +63,8 @@ instantiate (CRule head body) = do
   fresh
   CRule <$> (alpha head) <*> (return body)
 
-testHead :: Rule -> Term -> Evaluator Substitution
-testHead rule term =
+unifyHead :: Rule -> Term -> Evaluator Substitution
+unifyHead rule term =
   case unify head term of
     Nothing -> mzero
     Just phi -> return phi
@@ -73,21 +73,21 @@ testHead rule term =
       PRule h _ -> h
       CRule h _ -> h
 
-testBody :: Database -> Cut -> [Term] -> Substitution -> Evaluator Substitution
-testBody _ _ [] phi = return phi
-testBody db cut (Compound "cut" []:gs) phi =
-  testBody db cut gs phi <|> cut mzero
-testBody db cut (g:gs) phi = do
+unifyBody :: Database -> Cut -> [Term] -> Substitution -> Evaluator Substitution
+unifyBody _ _ [] phi = return phi
+unifyBody db cut (Compound "cut" []:gs) phi =
+  unifyBody db cut gs phi <|> cut mzero
+unifyBody db cut (g:gs) phi = do
   theta <- resolve db g
-  testBody db cut (map (subst theta) gs) (theta `compose` phi)
+  unifyBody db cut (map (subst theta) gs) (theta `compose` phi)
 
-testClause :: Database -> Cut -> Rule -> Term -> Evaluator Substitution
-testClause db cut rule term = do
+unifyClause :: Database -> Cut -> Rule -> Term -> Evaluator Substitution
+unifyClause db cut rule term = do
   r <- instantiate rule
-  p <- testHead r term
+  p <- unifyHead r term
   case r of
     PRule _ body ->
-      testBody db cut (map (subst p) body) p
+      unifyBody db cut (map (subst p) body) p
     CRule _ body -> do
       body p
 
@@ -95,7 +95,7 @@ type Cut = Evaluator Substitution -> Evaluator Substitution
 
 resolve :: Database -> Term -> Evaluator Substitution
 resolve db term = join $ callCC $ \cut ->
-  return $ msum $ map (\r -> testClause db cut r term) db
+  return $ msum $ map (\r -> unifyClause db cut r term) db
 
 eval :: Database -> Term -> IO [Substitution]
 eval db term = (`runContT` return) $ runListT $ evalStateT (resolve db term) 0
