@@ -5,10 +5,11 @@ import Data.List hiding (head)
 import Data.Function (on)
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Trans.List
 import Control.Monad.Trans.State
 import Type
 
-type Evaluator = StateT Int []
+type Evaluator = StateT Int (ListT IO)
 
 compose :: Substitution -> Substitution -> Substitution
 compose lhs rhs = nubBy ((==) `on` fst) alist
@@ -81,5 +82,5 @@ testClause db rule term = do
 resolve :: [Clause] -> Term -> Evaluator Substitution
 resolve db term = msum $ map (\r -> testClause db r term) db
 
-eval :: [Clause] -> Term -> [Substitution]
-eval db term = evalStateT (resolve db term) 0
+eval :: [Clause] -> Term -> IO [Substitution]
+eval db term = runListT $ evalStateT (resolve db term) 0

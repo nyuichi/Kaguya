@@ -16,6 +16,7 @@ main = do
   case parse "" text of
     Left  e  -> print e
     Right cs -> do
-      case eval cs (entry args) of
+      substs <- eval cs (entry args)
+      case substs of
         [] -> print False
         (x:_) -> print x
