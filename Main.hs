@@ -23,4 +23,4 @@ main = do
       substs2 <- eval cs entry2        -- main :- ...
       case substs1 ++ substs2 of
         [] -> print False
-        (x:_) -> print x
+        _  -> print True

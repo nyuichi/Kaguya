@@ -5,11 +5,10 @@ import Data.List hiding (head)
 import Data.Function (on)
 import Control.Applicative
 import Control.Monad
+import Control.Monad.IO.Class
 import Control.Monad.Trans.List
 import Control.Monad.Trans.State
 import Type
-
-type Evaluator = StateT Int (ListT IO)
 
 compose :: Substitution -> Substitution -> Substitution
 compose lhs rhs = nubBy ((==) `on` fst) alist
@@ -56,31 +55,56 @@ alpha :: Term -> Evaluator Term
 alpha (Compound op args) = Compound op <$> mapM alpha args
 alpha (Variable var) = Variable <$> rename var
 
-instantiate :: Clause -> Evaluator Clause
-instantiate (Rule head body) = do
+instantiate :: Rule -> Evaluator Rule
+instantiate (PRule head body) = do
   fresh
-  Rule <$> (alpha head) <*> (mapM alpha body)
+  PRule <$> (alpha head) <*> (mapM alpha body)
+instantiate (CRule head body) = do
+  fresh
+  CRule <$> (alpha head) <*> (return body)
 
-testHead :: Clause -> Term -> Evaluator ([Term], Substitution)
-testHead rule term = do
-  Rule head body <- instantiate rule
+testHead :: Rule -> Term -> Evaluator Substitution
+testHead rule term =
   case unify head term of
     Nothing -> mzero
-    Just phi -> return $ (map (subst phi) body, phi)
+    Just phi -> return phi
+  where
+    head = case rule of
+      PRule h _ -> h
+      CRule h _ -> h
 
-testBody :: [Clause] -> [Term] -> Substitution -> Evaluator Substitution
+testBody :: Database -> [Term] -> Substitution -> Evaluator Substitution
 testBody _ [] phi = return phi
 testBody db (g:gs) phi = do
   theta <- resolve db g
   testBody db (map (subst theta) gs) (theta `compose` phi)
 
-testClause :: [Clause] -> Clause -> Term -> Evaluator Substitution
+testClause :: Database -> Rule -> Term -> Evaluator Substitution
 testClause db rule term = do
-  (goals, phi) <- testHead rule term
-  testBody db goals phi
+  r <- instantiate rule
+  p <- testHead r term
+  case r of
+    PRule _ body ->
+      testBody db (map (subst p) body) p
+    CRule _ body -> do
+      body p
 
-resolve :: [Clause] -> Term -> Evaluator Substitution
+resolve :: Database -> Term -> Evaluator Substitution
 resolve db term = msum $ map (\r -> testClause db r term) db
 
+builtins :: Database
+builtins = [ CRule (Compound "write" [Variable "X"]) write ]
+  where
+    var name = Variable <$> rename name
+    write phi = do
+      t <- subst phi <$> (var "X")
+      liftIO $ print t
+      return phi
+
+database :: [Clause] -> Database
+database rules = builtins ++ do
+  Rule head body <- rules
+  return $ PRule head body
+
 eval :: [Clause] -> Term -> IO [Substitution]
-eval db term = runListT $ evalStateT (resolve db term) 0
+eval db term = runListT $ evalStateT (resolve (database db) term) 0

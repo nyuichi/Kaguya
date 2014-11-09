@@ -1,6 +1,10 @@
 module Type where
 
 import Data.List
+import Control.Monad.Trans.List
+import Control.Monad.Trans.State
+
+type Evaluator = StateT Int (ListT IO)
 
 data Term
   = Compound String [Term]
@@ -9,6 +13,13 @@ data Term
 data Clause
   = Rule Term [Term]
   deriving Show
+
+data Rule
+  = PRule Term [Term]
+  | CRule Term (Substitution -> Evaluator Substitution)
+
+type Database
+  = [Rule]
 
 type Substitution
   = [(String, Term)]
