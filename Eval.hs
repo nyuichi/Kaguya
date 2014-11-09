@@ -5,11 +5,10 @@ import Data.List hiding (head)
 import Data.Function (on)
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.State
 import Type
 
-type Evaluator = StateT Int Maybe
+type Evaluator = StateT Int []
 
 compose :: Substitution -> Substitution -> Substitution
 compose lhs rhs = nubBy ((==) `on` fst) alist
@@ -64,8 +63,9 @@ instantiate (Rule head body) = do
 testHead :: Clause -> Term -> Evaluator ([Term], Substitution)
 testHead rule term = do
   Rule head body <- instantiate rule
-  phi <- lift $ unify head term
-  return $ (map (subst phi) body, phi)
+  case unify head term of
+    Nothing -> mzero
+    Just phi -> return $ (map (subst phi) body, phi)
 
 testBody :: [Clause] -> [Term] -> Substitution -> Evaluator Substitution
 testBody _ [] phi = return phi
@@ -79,14 +79,7 @@ testClause db rule term = do
   testBody db goals phi
 
 resolve :: [Clause] -> Term -> Evaluator Substitution
-resolve db term = go db
-  where
-    go [] = mzero
-    go (r:rs) = do
-      s <- get
-      case runStateT (testClause db r term) s of
-        Nothing -> go rs
-        Just (a,s') -> put s' >> return a
+resolve db term = msum $ map (\r -> testClause db r term) db
 
-eval :: [Clause] -> Term -> Maybe Substitution
+eval :: [Clause] -> Term -> [Substitution]
 eval db term = evalStateT (resolve db term) 0

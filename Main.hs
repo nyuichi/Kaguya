@@ -17,5 +17,5 @@ main = do
     Left  e  -> print e
     Right cs -> do
       case eval cs (entry args) of
-        Nothing -> print False
-        Just xs -> print xs
+        [] -> print False
+        (x:_) -> print x
