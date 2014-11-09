@@ -41,7 +41,7 @@ functor = do
   return (head : tail)
 
 arguments :: Parser [Term]
-arguments = option [] $ do
+arguments = do
   op "("
   args <- term `sepBy` comma
   op ")"
@@ -50,7 +50,7 @@ arguments = option [] $ do
 simpleCompound :: Parser Term
 simpleCompound = do
   func <- functor
-  args <- option [] arguments
+  args <- arguments <|> lexeme (return [])
   return $ Compound func args
 
 listCompound :: Parser Term
