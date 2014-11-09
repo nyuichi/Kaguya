@@ -19,7 +19,13 @@ lexeme p = do
   return t
 
 whiteSpace :: Parser ()
-whiteSpace = spaces
+whiteSpace = skipMany (skipMany1 space <|> lineComment)
+
+lineComment :: Parser ()
+lineComment = do
+  try (char '%')
+  skipMany (satisfy (/= '\n'))
+  return ()
 
 op :: String -> Parser String
 op name = lexeme $ do
