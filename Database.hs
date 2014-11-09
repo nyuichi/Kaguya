@@ -6,12 +6,12 @@ import Control.Monad.Reader
 import Control.Monad.Writer
 
 import Type
-import Parser (parseTerm)
+import Parser (parseExpr)
 import Eval
 
 define :: String -> ReaderT Substitution Evaluator Substitution -> Writer [(Term, Substitution -> Evaluator Substitution)] ()
 define src cmd =
-  case parseTerm src of
+  case parseExpr src of
     Left _ -> return ()
     Right t -> tell [(t, \phi -> runReaderT cmd phi)]
 
