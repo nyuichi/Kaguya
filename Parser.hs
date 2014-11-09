@@ -2,7 +2,7 @@ module Parser (parse) where
 
 import Prelude hiding (head, tail)
 import Text.Parsec hiding (parse)
-import Kaguya
+import Type
 
 type Parser t = Parsec String () t
 

@@ -2,7 +2,7 @@ module Main where
 
 import System.Environment
 
-import Kaguya
+import Type
 import Parser
 import Eval
 

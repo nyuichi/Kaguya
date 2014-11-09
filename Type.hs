@@ -1,4 +1,4 @@
-module Kaguya where
+module Type where
 
 import Data.List
 

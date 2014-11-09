@@ -7,7 +7,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.State
-import Kaguya
+import Type
 
 type Evaluator = StateT Int Maybe
 
