@@ -32,7 +32,11 @@ parseTerm :: String -> Either ParseError Term
 parseTerm = runParser term () ""
 
 program :: Parser [Clause]
-program = whiteSpace >> many clause
+program = do
+  whiteSpace
+  cs <- many clause
+  eof
+  return cs
 
 functor :: Parser String
 functor = do
