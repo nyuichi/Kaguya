@@ -3,6 +3,8 @@ module Parser (parse, parseExpr) where
 import Prelude hiding (head, tail)
 import Text.Parsec hiding (parse)
 import Text.Parsec.Expr
+import Text.Parsec.Language (haskell)
+import Text.Parsec.Token (naturalOrFloat)
 import Control.Monad.Identity
 import Type
 
@@ -79,8 +81,15 @@ var = lexeme $ do
   tail <- many (alphaNum <|> char '_')
   return $ Variable (head : tail)
 
+number :: Parser Term
+number = do
+  x <- naturalOrFloat haskell
+  case x of
+    Right f -> return $ Number f
+    Left i -> return $ Number $ fromIntegral i
+
 term :: Parser Term
-term = try var <|> try compound <|> parens expr
+term = try (number <|> var <|> compound <|> parens expr)
 
 expr :: Parser Term
 expr = buildExpressionParser table term

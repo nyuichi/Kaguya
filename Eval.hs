@@ -16,6 +16,7 @@ compose lhs rhs = nubBy ((==) `on` fst) alist
     alist = [ (var, subst lhs term) | (var, term) <- rhs ] ++ lhs
 
 occur :: String -> Term -> Bool
+occur _   (Number _) = False
 occur var (Variable name) = var == name
 occur var (Compound _ args) = any (occur var) args
 
@@ -25,8 +26,10 @@ subst theta (Variable n) =
   case lookup n theta of
     Just x  -> x
     Nothing -> Variable n
+subst _ term = term
 
 unify :: Term -> Term -> Maybe Substitution
+unify (Number n) (Number m) | n == m = Just []
 unify (Variable var) term =
   if occur var term then
     Nothing
@@ -54,6 +57,7 @@ rename var = do
 alpha :: Term -> Evaluator Term
 alpha (Compound op args) = Compound op <$> mapM alpha args
 alpha (Variable var) = Variable <$> rename var
+alpha t = return t
 
 instantiate :: Rule -> Evaluator Rule
 instantiate (PRule head body) = do

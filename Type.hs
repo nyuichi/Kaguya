@@ -10,6 +10,7 @@ type Evaluator = StateT Int (ListT (ContT [Substitution] IO))
 data Term
   = Compound String [Term]
   | Variable String
+  | Number Double
 
 data Clause
   = Rule Term [Term]
@@ -26,6 +27,7 @@ type Substitution
   = [(String, Term)]
 
 instance Show Term where
+  show (Number num) = show num
   show (Variable var) = var
   show (Compound "." [h,t]) = "[" ++ show h ++ "|" ++ show t ++ "]"
   show (Compound atom []) = atom
