@@ -1,4 +1,4 @@
-module Parser (parse) where
+module Parser (parse, parseTerm) where
 
 import Prelude hiding (head, tail)
 import Text.Parsec hiding (parse)
@@ -8,6 +8,9 @@ type Parser t = Parsec String () t
 
 parse :: SourceName -> String -> Either ParseError [Clause]
 parse = runParser program ()
+
+parseTerm :: String -> Either ParseError Term
+parseTerm = runParser term () ""
 
 program :: Parser [Clause]
 program = many (between spaces spaces clause)

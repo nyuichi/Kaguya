@@ -1,11 +1,10 @@
-module Eval (eval) where
+module Eval where
 
 import Prelude hiding (head, tail, id)
 import Data.List hiding (head)
 import Data.Function (on)
 import Control.Applicative
 import Control.Monad
-import Control.Monad.IO.Class
 import Control.Monad.Trans.List
 import Control.Monad.Trans.State
 import Type
@@ -92,19 +91,5 @@ testClause db rule term = do
 resolve :: Database -> Term -> Evaluator Substitution
 resolve db term = msum $ map (\r -> testClause db r term) db
 
-builtins :: Database
-builtins = [ CRule (Compound "write" [Variable "X"]) write ]
-  where
-    var name = Variable <$> rename name
-    write phi = do
-      t <- subst phi <$> (var "X")
-      liftIO $ print t
-      return phi
-
-database :: [Clause] -> Database
-database rules = builtins ++ do
-  Rule head body <- rules
-  return $ PRule head body
-
-eval :: [Clause] -> Term -> IO [Substitution]
-eval db term = runListT $ evalStateT (resolve (database db) term) 0
+eval :: Database -> Term -> IO [Substitution]
+eval db term = runListT $ evalStateT (resolve db term) 0
