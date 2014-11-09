@@ -1,6 +1,7 @@
 module Main where
 
 import System.Environment
+import System.Exit
 
 import Type
 import Parser
@@ -24,5 +25,5 @@ main = do
       substs1 <- eval db (entry1 args) -- main(Args) :- ...
       substs2 <- eval db entry2        -- main :- ...
       case substs1 ++ substs2 of
-        [] -> print False
-        _  -> print True
+        [] -> exitWith $ ExitFailure 1
+        _  -> exitWith $ ExitSuccess
