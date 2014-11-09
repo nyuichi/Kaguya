@@ -24,7 +24,7 @@ whiteSpace = spaces
 op :: String -> Parser String
 op name = lexeme $ do
   s <- string name
-  notFollowedBy $ oneOf "`~!@#$%^&*-=+\\|;:<>,./?"
+  notFollowedBy $ oneOf "`~!@#$%^&*-=+\\|;:<>./?"
   return s
 
 parens :: Parser t -> Parser t
@@ -88,8 +88,13 @@ number = do
     Right f -> return $ Number f
     Left i -> return $ Number $ fromIntegral i
 
+cut :: Parser Term
+cut = do
+  op "!"
+  return $ Compound "!" []
+
 term :: Parser Term
-term = try (number <|> var <|> compound <|> parens expr)
+term = try (number <|> var <|> compound <|> cut <|> parens expr)
 
 expr :: Parser Term
 expr = buildExpressionParser table term

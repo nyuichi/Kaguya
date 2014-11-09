@@ -79,7 +79,7 @@ unifyHead rule term =
 
 unifyBody :: Database -> Cut -> [Term] -> Substitution -> Evaluator Substitution
 unifyBody _ _ [] phi = return phi
-unifyBody db cut (Compound "cut" []:gs) phi =
+unifyBody db cut (Compound "!" []:gs) phi =
   unifyBody db cut gs phi <|> cut mzero
 unifyBody db cut (g:gs) phi = do
   theta <- resolve db g
