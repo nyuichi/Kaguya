@@ -18,7 +18,16 @@ whiteSpace :: Parser ()
 whiteSpace = spaces
 
 op :: String -> Parser String
-op name = lexeme $ string name
+op name = lexeme $ do
+  s <- string name
+  notFollowedBy $ oneOf "`~!@#$%^&*-=+\\|;:<>,./?"
+  return s
+
+parens :: Parser t -> Parser t
+parens p = lexeme $ between (char '(') (char ')') p
+
+brackets :: Parser t -> Parser t
+brackets p = lexeme $ between (char '[') (char ']') p
 
 comma :: Parser String
 comma = op ","
@@ -45,11 +54,7 @@ functor = do
   return (head : tail)
 
 arguments :: Parser [Term]
-arguments = do
-  op "("
-  args <- term `sepBy` comma
-  op ")"
-  return args
+arguments = parens $ term `sepBy` comma
 
 simpleCompound :: Parser Term
 simpleCompound = do
@@ -58,11 +63,9 @@ simpleCompound = do
   return $ Compound func args
 
 listCompound :: Parser Term
-listCompound = do
-  op "["
+listCompound = brackets $ do
   args <- term `sepBy` comma
   rest <- option empty $ op "|" >> term
-  op "]"
   return $ foldr (\x y -> Compound "." [x,y]) rest args
 
 compound :: Parser Term
