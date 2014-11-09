@@ -7,6 +7,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.List
 import Control.Monad.State
+import Control.Monad.Cont
 import Type
 
 compose :: Substitution -> Substitution -> Substitution
@@ -72,24 +73,29 @@ testHead rule term =
       PRule h _ -> h
       CRule h _ -> h
 
-testBody :: Database -> [Term] -> Substitution -> Evaluator Substitution
-testBody _ [] phi = return phi
-testBody db (g:gs) phi = do
+testBody :: Database -> Cut -> [Term] -> Substitution -> Evaluator Substitution
+testBody _ _ [] phi = return phi
+testBody db cut (Compound "cut" []:gs) phi =
+  testBody db cut gs phi <|> cut mzero
+testBody db cut (g:gs) phi = do
   theta <- resolve db g
-  testBody db (map (subst theta) gs) (theta `compose` phi)
+  testBody db cut (map (subst theta) gs) (theta `compose` phi)
 
-testClause :: Database -> Rule -> Term -> Evaluator Substitution
-testClause db rule term = do
+testClause :: Database -> Cut -> Rule -> Term -> Evaluator Substitution
+testClause db cut rule term = do
   r <- instantiate rule
   p <- testHead r term
   case r of
     PRule _ body ->
-      testBody db (map (subst p) body) p
+      testBody db cut (map (subst p) body) p
     CRule _ body -> do
       body p
 
+type Cut = Evaluator Substitution -> Evaluator Substitution
+
 resolve :: Database -> Term -> Evaluator Substitution
-resolve db term = msum $ map (\r -> testClause db r term) db
+resolve db term = join $ callCC $ \cut ->
+  return $ msum $ map (\r -> testClause db cut r term) db
 
 eval :: Database -> Term -> IO [Substitution]
-eval db term = runListT $ evalStateT (resolve db term) 0
+eval db term = (`runContT` return) $ runListT $ evalStateT (resolve db term) 0

@@ -3,8 +3,9 @@ module Type where
 import Data.List
 import Control.Monad.List
 import Control.Monad.State
+import Control.Monad.Cont
 
-type Evaluator = StateT Int (ListT IO)
+type Evaluator = StateT Int (ListT (ContT [Substitution] IO))
 
 data Term
   = Compound String [Term]
