@@ -6,8 +6,11 @@ import Type
 import Parser
 import Eval
 
-entry :: [String] -> Term
-entry args = Compound "main" $ [ toList (map toAtom args) ]
+entry1 :: [String] -> Term
+entry1 args = Compound "main" $ [ toList (map toAtom args) ]
+
+entry2 :: Term
+entry2 = Compound "main" $ []
 
 main :: IO ()
 main = do
@@ -16,7 +19,8 @@ main = do
   case parse "" text of
     Left  e  -> print e
     Right cs -> do
-      substs <- eval cs (entry args)
-      case substs of
+      substs1 <- eval cs (entry1 args) -- main(Args) :- ...
+      substs2 <- eval cs entry2        -- main :- ...
+      case substs1 ++ substs2 of
         [] -> print False
         (x:_) -> print x
