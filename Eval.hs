@@ -5,8 +5,8 @@ import Data.List hiding (head)
 import Data.Function (on)
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.List
-import Control.Monad.Trans.State
+import Control.Monad.List
+import Control.Monad.State
 import Type
 
 compose :: Substitution -> Substitution -> Substitution

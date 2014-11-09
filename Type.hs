@@ -1,8 +1,8 @@
 module Type where
 
 import Data.List
-import Control.Monad.Trans.List
-import Control.Monad.Trans.State
+import Control.Monad.List
+import Control.Monad.State
 
 type Evaluator = StateT Int (ListT IO)
 

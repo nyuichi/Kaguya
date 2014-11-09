@@ -2,9 +2,8 @@ module Database where
 
 import Prelude hiding (head)
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Class
-import Control.Monad.Trans.Reader
-import Control.Monad.Trans.Writer
+import Control.Monad.Reader
+import Control.Monad.Writer
 
 import Type
 import Parser (parseTerm)
