@@ -20,6 +20,9 @@ whiteSpace = spaces
 op :: String -> Parser String
 op name = lexeme $ string name
 
+comma :: Parser String
+comma = op ","
+
 -- parse
 
 parse :: SourceName -> String -> Either ParseError [Clause]
@@ -40,7 +43,7 @@ functor = do
 arguments :: Parser [Term]
 arguments = option [] $ do
   op "("
-  args <- term `sepBy` (op ",")
+  args <- term `sepBy` comma
   op ")"
   return args
 
@@ -53,7 +56,7 @@ simpleCompound = do
 listCompound :: Parser Term
 listCompound = do
   op "["
-  args <- term `sepBy` (op ",")
+  args <- term `sepBy` comma
   rest <- option empty $ op "|" >> term
   op "]"
   return $ foldr (\x y -> Compound "." [x,y]) rest args
@@ -74,7 +77,7 @@ rule :: Parser Clause
 rule = do
   head <- term
   op ":-"
-  body <- term `sepBy` (op ",")
+  body <- term `sepBy` comma
   return $ Rule head body
 
 fact :: Parser Clause
